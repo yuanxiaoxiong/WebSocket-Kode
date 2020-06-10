@@ -136,11 +136,12 @@ public class JWebSocketClientService extends Service {
 
             @Override
             public void onClosing(String reason) {
+                isConnected = false;
             }
 
             @Override
             public void onClose(String reason) {
-
+                isConnected = false;
             }
 
             @Override
@@ -188,6 +189,7 @@ public class JWebSocketClientService extends Service {
         try {
             if (null != client) {
                 client.close();
+                isConnected = false;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -259,12 +261,8 @@ public class JWebSocketClientService extends Service {
         @Override
         public void run() {
             Log.e("JWebSocketClientService", "心跳包检测websocket连接状态->" + client.isConnect());
-            if (client != null) {
-                if (!client.isConnect()) {
-                    reconnectWs();
-                } else {
-                    isConnected = true;
-                }
+            if (client != null && !isConnected) {
+                reconnectWs();
             } else {
                 //如果client已为空，重新初始化连接
                 client = null;

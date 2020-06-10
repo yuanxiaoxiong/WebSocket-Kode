@@ -18,15 +18,6 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <service
-            android:name=".push.JWebSocketClientService"
-            android:enabled="true"
-            android:exported="true" />
-        <service
-            android:name=".push.JWebSocketClientService$GrayInnerService"
-            android:enabled="true"
-            android:exported="false"
-            android:process=":gray" />
         <!--关闭软件盘的挂起-->
         <!--android:windowSoftInputMode="stateHidden"-->
         <activity
