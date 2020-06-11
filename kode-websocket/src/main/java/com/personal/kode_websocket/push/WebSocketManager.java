@@ -78,13 +78,10 @@ public class WebSocketManager {
                 Log.d(TAG, "onOpen: " + response.toString());
                 mWebSocket = webSocket;
                 isConnect = response.code() == 101;
-                if (!isConnect) {
-                    //reconnect();
-                } else {
-                    Log.d(TAG, "onOpen: 连接成功！");
-                    if (iReceiveMessage != null) {
-                        iReceiveMessage.onConnectSucceeded();
-                    }
+                Log.d(TAG, "onOpen: 连接成功！");
+                if (iReceiveMessage != null) {
+                    iReceiveMessage.onConnectSucceeded();
+
                 }
             }
 
@@ -103,6 +100,7 @@ public class WebSocketManager {
                 if (null != iReceiveMessage) {
                     iReceiveMessage.onByteStringMessage(bytes);
                 }
+                Log.d(TAG, "onMessage: " + bytes);
             }
 
             @Override
@@ -131,12 +129,10 @@ public class WebSocketManager {
                 if (response != null) {
                     Log.d(TAG, "onFailure: " + response.message());
                 }
-                Log.d(TAG, "onFailure: " + t.getMessage());
                 isConnect = false;
                 if (null != iReceiveMessage) {
                     iReceiveMessage.onConnectFailed();
                 }
-                //reconnect();
             }
         };
     }
@@ -145,6 +141,7 @@ public class WebSocketManager {
      * 重连,会无限循环
      */
     public void reconnect() {
+        isConnect = false;
         if (connectNum < MAX_NUM) {
             try {
                 Thread.sleep(MILLIS);
@@ -195,13 +192,11 @@ public class WebSocketManager {
      *
      * @return
      */
-    public boolean close() {
+    public void close() {
         if (isConnect()) {
+            Log.e(TAG, "close: 关闭连接");
             mWebSocket.cancel();
             mWebSocket.close(1001, "客户端主动关闭连接");
-            mWebSocket = null;
-            return true;
         }
-        return false;
     }
 }

@@ -20,11 +20,11 @@
         android:supportsRtl="true"
         tools:ignore="GoogleAppIndexingWarning">
         <service
-            android:name=".push.JWebSocketClientService"
+            android:name=".push.PushService"
             android:enabled="true"
             android:exported="true" />
         <service
-            android:name=".push.JWebSocketClientService$GrayInnerService"
+            android:name=".push.PushService$GrayInnerService"
             android:enabled="true"
             android:exported="false"
             android:process=":gray" />

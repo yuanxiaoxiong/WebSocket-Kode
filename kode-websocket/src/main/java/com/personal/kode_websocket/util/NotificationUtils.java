@@ -90,7 +90,7 @@ public class NotificationUtils extends ContextWrapper {
     /**
      * 4.获取通知Builder，对通知做一些初始化操作
      */
-    private NotificationCompat.Builder getNotification() {
+    public NotificationCompat.Builder getNotification() {
         NotificationCompat.Builder builder = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID);//8.0以上

@@ -3,8 +3,6 @@ package com.personal.kode_websocket.push;
 import android.annotation.SuppressLint;
 import android.app.KeyguardManager;
 import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -16,7 +14,6 @@ import android.os.PowerManager;
 import android.util.Log;
 
 import androidx.annotation.RequiresApi;
-import androidx.core.app.NotificationCompat;
 
 
 import com.personal.kode_websocket.util.NotificationUtils;
@@ -25,11 +22,12 @@ import com.personal.kode_websocket.util.Util;
 import okio.ByteString;
 
 
-public class JWebSocketClientService extends Service {
+public class PushService extends Service {
 
     public WebSocketManager client;
-    private JWebSocketClientBinder mBinder = new JWebSocketClientBinder();
+    private PushServiceBinder mBinder = new PushServiceBinder();
     private final static int GRAY_SERVICE_ID = 1001;
+    private boolean closeService = false;//标记是否关闭服务
 
     //灰色保活
     public static class GrayInnerService extends Service {
@@ -63,9 +61,9 @@ public class JWebSocketClientService extends Service {
     }
 
     //用于Activity和service通讯
-    public class JWebSocketClientBinder extends Binder {
-        public JWebSocketClientService getService() {
-            return JWebSocketClientService.this;
+    public class PushServiceBinder extends Binder {
+        public PushService getService() {
+            return PushService.this;
         }
     }
 
@@ -112,7 +110,7 @@ public class JWebSocketClientService extends Service {
         super.onDestroy();
     }
 
-    public JWebSocketClientService() {
+    public PushService() {
     }
 
 
@@ -124,14 +122,22 @@ public class JWebSocketClientService extends Service {
         client.init(Util.ws, new IReceiveMessage() {
             @Override
             public void onConnectSucceeded() {
-                Log.e("JWebSocketClientService", "websocket->连接成功");
+                Log.e("PushService", "websocket->连接成功");
                 isConnected = true;
             }
 
             @Override
             public void onConnectFailed() {
-                Log.e("JWebSocketClientService", "websocket->连接失败");
-                isConnected = false;
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if (!closeService) {
+                    Log.e("PushService", "websocket->连接失败");
+                    client.reconnect();
+                    isConnected = false;
+                }
             }
 
             @Override
@@ -146,14 +152,14 @@ public class JWebSocketClientService extends Service {
 
             @Override
             public void onStringMessage(String message) {
-                Log.e("JWebSocketClientService", "收到的消息：" + message);
+                Log.e("PushService", "收到的消息：" + message);
 
                 Intent intent = new Intent();
                 intent.setAction("com.xch.servicecallback.content");
                 intent.putExtra("message", message);
                 sendBroadcast(intent);
 
-                checkLockAndShowNotification(message);
+                checkLockAndShowNotification("标题", message);
             }
 
             @Override
@@ -171,7 +177,7 @@ public class JWebSocketClientService extends Service {
      */
     public void sendMsg(final String msg) {
         if (null != client) {
-            Log.e("JWebSocketClientService", "发送的消息：" + msg);
+            Log.e("PushService", "发送的消息：" + msg);
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -179,22 +185,29 @@ public class JWebSocketClientService extends Service {
                 }
             }).start();
         }
-
     }
 
     /**
      * 断开连接
      */
-    private void closeConnect() {
+    @SuppressLint("WrongConstant")
+    public void closeConnect() {
         try {
             if (null != client) {
                 client.close();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    stopForeground(GRAY_SERVICE_ID);
+                }
+                stopForeground(true);
+                stopSelf();
                 isConnected = false;
+                closeService = true;
             }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             client = null;
+            closeService = true;
         }
     }
 
@@ -204,9 +217,10 @@ public class JWebSocketClientService extends Service {
     /**
      * 检查锁屏状态，如果锁屏先点亮屏幕
      *
+     * @param title
      * @param content
      */
-    private void checkLockAndShowNotification(String content) {
+    private void checkLockAndShowNotification(String title, String content) {
         //管理锁屏的一个服务
         KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         if (km.inKeyguardRestrictedInputMode()) {//锁屏
@@ -218,9 +232,9 @@ public class JWebSocketClientService extends Service {
                 wl.acquire();  //点亮屏幕
                 wl.release();  //任务结束后释放
             }
-            sendNotification(content);
+            sendNotification(title, content);
         } else {
-            sendNotification(content);
+            sendNotification(title, content);
         }
     }
 
@@ -229,7 +243,7 @@ public class JWebSocketClientService extends Service {
      *
      * @param content
      */
-    private void sendNotification(String content) {
+    private void sendNotification(String title, String content) {
 //        Intent intent = new Intent();
 //        intent.setClass(this, MainActivity.class);
 //        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -249,23 +263,23 @@ public class JWebSocketClientService extends Service {
 //                .build();
 //        notifyManager.notify(1, notification);//id要保证唯一
         NotificationUtils utils = new NotificationUtils(this);
-        utils.sendNotification(1, "您有新的请假通知", content);
+        utils.sendNotification(1, title, content);
     }
 
 
     //    -------------------------------------websocket心跳检测------------------------------------------------
-    private static final long HEART_BEAT_RATE = 10 * 1000;//每隔10秒进行一次对长连接的心跳检测
+    private static final long HEART_BEAT_RATE = 10 * 60 * 1000;//每隔10分钟进行一次对长连接的心跳检测,不管是否连接，都进行一次重连（防止线程睡眠）
     private static boolean isConnected;
     private Handler mHandler = new Handler();
     private Runnable heartBeatRunnable = new Runnable() {
         @Override
         public void run() {
-            Log.e("JWebSocketClientService", "心跳包检测websocket连接状态->" + client.isConnect());
-            if (client != null && !isConnected) {
+            Log.e("PushService", "心跳包检测websocket连接状态->" + isConnected);
+            if (client != null) {
                 reconnectWs();
             } else {
                 //如果client已为空，重新初始化连接
-                client = null;
+                isConnected = false;
                 initSocketClient();
             }
             //每隔一定的时间，对长连接进行一次心跳检测
@@ -282,8 +296,10 @@ public class JWebSocketClientService extends Service {
             @Override
             public void run() {
                 try {
-                    Log.e("JWebSocketClientService", "开启重连");
-                    client.reconnect();
+                    Log.e("PushService", "开启重连");
+                    if (client != null && !closeService) {
+                        client.reconnect();
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
