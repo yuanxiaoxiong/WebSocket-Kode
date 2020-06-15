@@ -16,6 +16,7 @@ import android.util.Log;
 import androidx.annotation.RequiresApi;
 
 
+import com.alibaba.fastjson.JSON;
 import com.personal.kode_websocket.util.NotificationUtils;
 import com.personal.kode_websocket.util.Util;
 
@@ -158,8 +159,8 @@ public class PushService extends Service {
                 intent.setAction("com.xch.servicecallback.content");
                 intent.putExtra("message", message);
                 sendBroadcast(intent);
-
-                checkLockAndShowNotification("标题", message);
+                //通知
+                checkLockAndShowNotification("您有新的请假通知", JSON.parseObject(message).getString("content"));
             }
 
             @Override

@@ -11,8 +11,15 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.personal.kode_websocket.push.PushManger;
 import com.personal.kode_websocket.push.PushService;
+
+import org.json.JSONArray;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -23,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private PushService pushService;
     private PushService.PushServiceBinder binder;
+    private Map<String, String> map = new HashMap<>();
 
     /**
      * 服务连接
@@ -33,7 +41,17 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "服务与活动成功绑定");
             binder = (PushService.PushServiceBinder) iBinder;
             pushService = binder.getService();
-            sendMessage("android:123456");
+
+            //模拟发送消息
+            Map<String, Object> map = new HashMap<>();
+            TestModel testModel = new TestModel();
+            testModel.setId("001");
+            testModel.setName("我是某某阿");
+            map.put("to", "2017001");
+//            map.put("content", JSON.toJSON(testModel));
+            map.put("content", "17软件工程2班-201710098182-柯华富 查看详情>>");
+            map.put("status", "200");
+            sendMessage(JSON.toJSONString(map));
             try {
                 //模拟关闭推送服务
                 Thread.sleep(3000);
@@ -58,6 +76,11 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             String message = intent.getStringExtra("message");
             Log.d(TAG, "onReceive->服务器返回来的消息:" + message);
+            //模拟收到服务器消息的响应
+            JSONObject jsonObject = JSON.parseObject(message);
+            map.put("uuid", jsonObject.getString("uuid"));
+            map.put("status", "201");
+            sendMessage(JSON.toJSONString(map));
         }
     }
 
@@ -65,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        String url = "ws://kodes.free.idcfengye.com/websocket/android";
+        String url = "ws://kodes.free.idcfengye.com/websocket/2017001";
         //初始化消息推送服务
         PushManger.getInstance().init(url, this, serviceConnection, new MessageReceiver());
     }
