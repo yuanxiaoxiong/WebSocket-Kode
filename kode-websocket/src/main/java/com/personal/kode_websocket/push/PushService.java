@@ -19,8 +19,12 @@ import androidx.annotation.RequiresApi;
 
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.personal.kode_websocket.util.NotificationUtils;
 import com.personal.kode_websocket.util.Util;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import okio.ByteString;
 
@@ -40,9 +44,9 @@ public class PushService extends Service {
 
         @Override
         public int onStartCommand(Intent intent, int flags, int startId) {
-                startForeground(GRAY_SERVICE_ID, new Notification());
-                stopForeground(true);
-                stopSelf();
+            startForeground(GRAY_SERVICE_ID, new Notification());
+            stopForeground(true);
+            stopSelf();
             return super.onStartCommand(intent, flags, startId);
         }
 
@@ -173,7 +177,13 @@ public class PushService extends Service {
             @Override
             public void onStringMessage(String message) {
                 Log.e("PushService", "收到的消息：" + message);
-
+                Map<String, Object> map = new HashMap<>();
+                JSONObject jsonObject = JSON.parseObject(message);
+                map.put("uuid", jsonObject.getString("uuid"));
+                map.put("status", "201");
+                if (client.isConnect()) {
+                    sendMsg(JSON.toJSONString(map));
+                }
                 Intent intent = new Intent();
                 intent.setAction("com.xch.servicecallback.content");
                 intent.putExtra("message", message);
