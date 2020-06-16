@@ -28,7 +28,7 @@ public class NotificationUtils extends ContextWrapper {
 
     public static final String CHANNEL_ID = "default";//渠道id
 
-    private static final String CHANNEL_NAME = "消息推送";//渠道名称，用户在通知设置中可以看到的名称
+    public static final String CHANNEL_NAME = "消息推送";//渠道名称，用户在通知设置中可以看到的名称
 
     private NotificationManager mManager;             //通知管理器
 

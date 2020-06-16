@@ -6,7 +6,7 @@ android {
     defaultConfig {
         applicationId "com.yxc.websocketclient"//该applicationId为进程保活的关键。
         minSdkVersion 18
-        targetSdkVersion 29
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

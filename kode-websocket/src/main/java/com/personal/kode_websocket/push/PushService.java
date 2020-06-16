@@ -3,6 +3,8 @@ package com.personal.kode_websocket.push;
 import android.annotation.SuppressLint;
 import android.app.KeyguardManager;
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -22,6 +24,9 @@ import com.personal.kode_websocket.util.Util;
 
 import okio.ByteString;
 
+import static com.personal.kode_websocket.util.NotificationUtils.CHANNEL_ID;
+import static com.personal.kode_websocket.util.NotificationUtils.CHANNEL_NAME;
+
 
 public class PushService extends Service {
 
@@ -35,9 +40,9 @@ public class PushService extends Service {
 
         @Override
         public int onStartCommand(Intent intent, int flags, int startId) {
-            startForeground(GRAY_SERVICE_ID, new Notification());
-            stopForeground(true);
-            stopSelf();
+                startForeground(GRAY_SERVICE_ID, new Notification());
+                stopForeground(true);
+                stopSelf();
             return super.onStartCommand(intent, flags, startId);
         }
 
@@ -97,7 +102,21 @@ public class PushService extends Service {
             startForeground(GRAY_SERVICE_ID, new Notification());
         } else {
             //Android7.0以上app启动后通知栏会出现一条"正在运行"的通知
-            startForeground(GRAY_SERVICE_ID, new Notification());//保活关键
+            if (Build.VERSION.SDK_INT > 26) {
+                //安卓开发8.1(27)以上系统启动服务和通知
+                Log.d("PushService", "onStartCommand:执行安卓开发8.1(27)以上");
+                Notification.Builder builder = new Notification.Builder(this.getApplicationContext(), CHANNEL_ID);
+                NotificationChannel notificationChannel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_MIN);
+                notificationChannel.enableLights(false);//如果使用中的设备支持通知灯，则说明此通知通道是否应显示灯
+                notificationChannel.setShowBadge(false);//是否显示角标
+                notificationChannel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
+                NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                manager.createNotificationChannel(notificationChannel);
+                builder.setChannelId(CHANNEL_ID);
+                startForeground(GRAY_SERVICE_ID, builder.build());
+            } else {
+                startForeground(GRAY_SERVICE_ID, new Notification());//保活关键
+            }
         }
 
         acquireWakeLock();

@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        String url = "ws://kodes.free.idcfengye.com/websocket/2017001";
+        String url = "ws://kodes.free.idcfengye.com/websocket/2017003";
         //初始化消息推送服务
         PushManger.getInstance().init(url, this, serviceConnection, new MessageReceiver());
     }
