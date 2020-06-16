@@ -11,7 +11,7 @@
 implementation 'com.github.kehuafu:WebSocket-Kode:1.0.5'
 ```
 
-2.在需要【消息推送】的acitivty中初始化：
+2.在需要【消息推送】的activity中初始化：
 
 ```java
 //初始化消息推送
@@ -20,9 +20,9 @@ PushManger.getInstance().init(websocketUrl, context,connection,receiver);
 
 （1）其中:
 
-​	**connection：**将消息推送服务与当前acticity进行绑定
+​	connection：将消息推送服务与当前acticity进行绑定
 
-​	**receiver：**用于接收推送服务返回来的消息
+​	receiver：用于接收推送服务返回来的消息
 
 （2）connection示例：
 
